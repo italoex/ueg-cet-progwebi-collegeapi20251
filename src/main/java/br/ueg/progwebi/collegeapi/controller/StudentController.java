@@ -1,35 +1,57 @@
 package br.ueg.progwebi.collegeapi.controller;
 
+import br.ueg.progwebi.collegeapi.controller.exceptions.ResourceNotFoundException;
+import br.ueg.progwebi.collegeapi.dto.StudentCreateDTO;
 import br.ueg.progwebi.collegeapi.model.Student;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import br.ueg.progwebi.collegeapi.service.StudentService;
+import br.ueg.progwebi.collegeapi.service.exceptions.BusinessException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 
 @RestController
 @RequestMapping(path = "/student")
 public class StudentController {
 
+    @Autowired
+    private StudentService studentService;
+
     @GetMapping
     public List<Student> listAll(){
-        Student student = new Student();
-        student.setId(1l);
-        student.setName("Student 1");
-        student.setRegisterNumber("2025010101");
-        student.setCourse("SI");
-        student.setRegisterDate(LocalDate.now());
+        return studentService.listAll();
+    }
 
-        Student student2 = Student.builder()
-                .id(2l)
-                .name("Student 2")
-                .registerNumber("2025010102")
-                .course("SI")
-                .registerDate(LocalDate.now())
-                .build();
-        List<Student> students = Arrays.asList(student, student2);
-        return students;
+    @PostMapping
+    public Student create(@RequestBody StudentCreateDTO student){
+        Student newStudent = Student.builder()
+                .course(student.getCourse())
+                .name(student.getName())
+                .build()
+        return studentService.create(student);
+    }
+
+    @PostMapping(path = "/{id}")
+    public Student update(
+            @PathVariable Long id,
+            @RequestBody Student student){
+        student.setId(id);
+        return studentService.update(student);
+    }
+
+    @GetMapping(path = "/course/{course}")
+    public List<Student> course(@PathVariable String course){
+        return studentService.listStudentsCourse(course);
+    }
+
+    public Student delete(@PathVariable Long id){
+        Student student;
+        try {
+            student = this.studentService.delete(id);
+        } catch(BusinessException e) {
+            throw new ResourceNotFoundException(
+                    e.getMessage());
+        }
+        return student;
     }
 }
